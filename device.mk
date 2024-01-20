@@ -68,8 +68,13 @@ PRODUCT_PACKAGES += \
 TARGET_FACE_UNLOCK_SUPPORTED := true
 
 # GPS
+ifeq ($(TARGET_CN_GPS),true)
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/gps/gps_debug_cn.conf:$(TARGET_COPY_OUT_SYSTEM)/etc/gps_debug.conf
+else
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/gps/gps_debug.conf:$(TARGET_COPY_OUT_SYSTEM)/etc/gps_debug.conf
+endif
 
 # Input
 PRODUCT_COPY_FILES += \
