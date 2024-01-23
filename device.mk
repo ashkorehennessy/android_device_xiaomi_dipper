@@ -60,6 +60,11 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PACKAGES += \
     fstab.qcom
 
+ifeq ($(TARGET_NO_FBE),true)
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/rootdir/etc/fstab-no-fbe.qcom:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.qcom
+endif
+
 # Device init scripts
 PRODUCT_PACKAGES += \
     init.target.rc
