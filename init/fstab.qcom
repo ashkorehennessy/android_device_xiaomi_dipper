@@ -17,6 +17,6 @@
 /dev/block/by-name/system                    /system                 ext4    ro,barrier=1,discard                                                                              wait,first_stage_mount
 /dev/block/by-name/cust                      /system_ext             ext4    ro,barrier=1,discard                                                                              wait,first_stage_mount
 /dev/block/by-name/vendor                    /vendor                 ext4    ro,barrier=1,discard                                                                              wait,first_stage_mount
-/dev/block/zram0                             none                    swap    defaults                                                                                          zramsize=2147483648,max_comp_streams=8
+/dev/block/zram0                             none                    swap    defaults                                                                                          zramsize=3221225472,max_comp_streams=8
 
 /devices/platform/soc/*.ssusb/*.dwc3/xhci-hcd.*.auto*   /storage/usbotg       vfat    nosuid,nodev    wait,voldmanaged=usbotg:auto
