@@ -6,3 +6,6 @@ persist.camera.sat.fallback.lux.d=20
 
 # Display
 ro.surface_flinger.has_wide_color_display=true
+
+# FaceUnlock
+ro.face.sense_service.camera_id=5
