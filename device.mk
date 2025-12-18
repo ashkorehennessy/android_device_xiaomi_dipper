@@ -108,6 +108,12 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PACKAGES += \
     XiaomiPocketMode
 
+# Override props
+PRODUCT_BUILD_PROP_OVERRIDES += \
+    SystemName=dipper \
+    DeviceProduct=dipper \
+    BuildFlavor=dipper-user
+
 # Soong namespaces
 PRODUCT_SOONG_NAMESPACES += \
     $(LOCAL_PATH)
