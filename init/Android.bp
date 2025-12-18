@@ -3,11 +3,29 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-prebuilt_etc {
+soong_config_module_type {
+    name: "dipper_fstab_prebuilt",
+    module_type: "prebuilt_etc",
+    config_namespace: "dipper_config",
+    bool_variables: ["disable_encryption"],
+    properties: ["src"],
+}
+
+dipper_fstab_prebuilt {
     name: "fstab.qcom",
-    src: "fstab.qcom",
+
+    src: "fstab.qcom.encrypted",
+
+    filename: "fstab.qcom",
+
     soc_specific: true,
     ramdisk_available: true,
+
+    soong_config_variables: {
+        disable_encryption: {
+            src: "fstab.qcom.decrypted",
+        },
+    },
 }
 
 prebuilt_etc {
