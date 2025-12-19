@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="status_bar_padding_start">8dp</dimen>
+    <dimen name="status_bar_padding_end">0dp</dimen>
+    <dimen name="status_bar_padding_top">4dp</dimen>
+    <dimen name="rounded_corner_content_padding">0dp</dimen>
+    <dimen name="status_bar_icons_padding_start">0dp</dimen>
+    <dimen name="status_bar_icons_padding_end">0dp</dimen>
+    <dimen name="status_bar_icon_horizontal_margin">-3sp</dimen>
+    <dimen name="status_bar_icon_size">20dp</dimen>
+    <dimen name="status_bar_horizontal_padding">1dp</dimen>
+    <dimen name="status_bar_system_icon_spacing">0dp</dimen>
+    <dimen name="status_bar_clock_end_padding">2dp</dimen>
+</resources>
