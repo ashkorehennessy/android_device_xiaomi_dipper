@@ -7,14 +7,15 @@ soong_config_module_type {
     name: "dipper_fstab_prebuilt",
     module_type: "prebuilt_etc",
     config_namespace: "dipper_config",
-    bool_variables: ["disable_encryption"],
+    bool_variables: ["enable_encryption"],
     properties: ["src"],
 }
+
 
 dipper_fstab_prebuilt {
     name: "fstab.qcom",
 
-    src: "fstab.qcom.encrypted",
+    src: "fstab.qcom.decrypted",
 
     filename: "fstab.qcom",
 
@@ -22,11 +23,12 @@ dipper_fstab_prebuilt {
     ramdisk_available: true,
 
     soong_config_variables: {
-        disable_encryption: {
-            src: "fstab.qcom.decrypted",
+        enable_encryption: {
+            src: "fstab.qcom.encrypted",
         },
     },
 }
+
 
 prebuilt_etc {
     name: "init.target.rc",
