@@ -31,7 +31,16 @@ TARGET_SYSTEM_PROP += $(DEVICE_PATH)/system.prop
 TARGET_VENDOR_PROP += $(DEVICE_PATH)/vendor.prop
 
 # Recovery
+ifeq ($(ENABLE_ENCRYPTION),true)
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/init/fstab.qcom
+else
+TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/init/fstab.qcom.decrypted
+endif
+
+# userdata encryption config
+SOONG_CONFIG_NAMESPACES += dipper_config
+SOONG_CONFIG_dipper_config += enable_encryption
+SOONG_CONFIG_dipper_config_enable_encryption := $(ENABLE_ENCRYPTION)
 
 # Inherit from the proprietary version
 include vendor/xiaomi/dipper/BoardConfigVendor.mk
