@@ -18,7 +18,7 @@ from extract_utils.main import (
 
 namespace_imports = [
     'hardware/qcom-caf/common/libqti-perfd-client',
-    'hardware/qcom-caf/sdm845',
+    'hardware/qcom-caf/sm8250',
     'hardware/xiaomi',
     'vendor/qcom/opensource/display',
     'vendor/xiaomi/sdm845-common'
