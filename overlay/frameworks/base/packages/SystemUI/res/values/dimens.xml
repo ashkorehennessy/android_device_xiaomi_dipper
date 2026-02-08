@@ -8,7 +8,7 @@
     <dimen name="status_bar_icons_padding_end">0dp</dimen>
     <dimen name="status_bar_icon_horizontal_margin">-3sp</dimen>
     <dimen name="status_bar_icon_size">20dp</dimen>
-    <dimen name="status_bar_horizontal_padding">1dp</dimen>
-    <dimen name="status_bar_system_icon_spacing">0dp</dimen>
     <dimen name="status_bar_clock_end_padding">2dp</dimen>
+    <dimen name="status_bar_wifi_signal_horizontal_margin">0sp</dimen>
+    <dimen name="status_bar_wifi_signal_spacer_width">0sp</dimen>
 </resources>
