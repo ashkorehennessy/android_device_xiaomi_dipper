@@ -1,0 +1,114 @@
+cc_prebuilt_library_shared {
+    name: "liblhdcv5",
+    owner: "savitech",
+    strip: {
+        none: true,
+    },
+    export_include_dirs: ["include"],
+    arch: {
+        arm64: {
+            srcs: ["libs/arm64-v8a/liblhdcv5.so"],
+        },
+    },
+    compile_multilib: "64",
+
+    check_elf_files: false,
+
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.bt",
+    ],
+    min_sdk_version: "33",
+    shared_libs: [
+        "liblog",
+        "libstdc++",
+    ],
+}
+
+cc_prebuilt_library_shared {
+    name: "liblhdc",
+    owner: "savitech",
+    strip: {
+        none: true,
+    },
+    export_include_dirs: ["include"],
+    arch: {
+        arm64: {
+            srcs: ["libs/arm64-v8a/liblhdc.so"],
+        },
+    },
+    compile_multilib: "64",
+    check_elf_files: false,
+
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.bt",
+    ],
+    min_sdk_version: "33",
+    shared_libs: [
+        "liblog",
+        "libstdc++",
+    ],
+}
+
+cc_library_shared {
+    name: "liblhdcv5BT_enc",
+    owner: "savitech",
+
+    srcs: [
+        "src/lhdcv5BT_enc.c",
+        "src/lhdcv5BT_abr.c",
+    ],
+
+    export_include_dirs: ["inc"],
+    local_include_dirs: ["inc", "include"],
+
+    cflags: [
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Wmacro-redefined",
+        "-Wno-unused-parameter",
+        "-Wno-implicit-function-declaration",
+    ],
+
+    shared_libs: [
+        "libcutils",
+        "liblog",
+        "liblhdcv5",
+    ],
+
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.bt",
+    ],
+    min_sdk_version: "33",
+    compile_multilib: "64",
+}
+
+cc_library_shared {
+    name: "liblhdcBT_enc",
+    owner: "savitech",
+
+    srcs: [
+        "src/lhdcBT_enc.c",
+    ],
+
+    export_include_dirs: ["inc"],
+    local_include_dirs: ["inc", "include"],
+
+    cflags: ["-O2", "-Wall", "-Wextra", "-Wmacro-redefined", "-Wno-unused-parameter"],
+
+    shared_libs: [
+        "libcutils",
+        "liblog",
+        "liblhdc",
+    ],
+
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.bt",
+    ],
+    min_sdk_version: "33",
+    compile_multilib: "64",
+}

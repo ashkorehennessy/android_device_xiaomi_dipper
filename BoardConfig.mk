@@ -14,6 +14,9 @@ DEVICE_PATH := device/xiaomi/dipper
 # Assert
 TARGET_OTA_ASSERT_DEVICE := dipper
 
+# LHDC
+$(call soong_config_set, btservices, use_lhdc, true)
+
 # Display
 TARGET_SCREEN_DENSITY := 440
 

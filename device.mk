@@ -88,6 +88,13 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/keylayout/uinput-fpc.kl:system/usr/keylayout/uinput-fpc.kl \
     $(LOCAL_PATH)/keylayout/uinput-goodix.kl:system/usr/keylayout/uinput-goodix.kl
 
+# LHDC
+PRODUCT_PACKAGES += \
+    liblhdcBT_enc \
+    liblhdcv5BT_enc \
+    liblhdc \
+    liblhdcv5
+
 # LiveDisplay
 PRODUCT_PACKAGES += \
     vendor.lineage.livedisplay-service.xiaomi_sdm845

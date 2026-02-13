@@ -1,0 +1,2 @@
+0fd2f572cc730c3e5d14ad2c73b9c0883dff4ca155c3dda1da386f7efc9e8856  libs/arm64-v8a/liblhdcv5.so
+3cdc73f296a56864e245dfca8385d2d4f9a21793d05336c754779802b984573a  libs/arm64-v8a/liblhdc.so
