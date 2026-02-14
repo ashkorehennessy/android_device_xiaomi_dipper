@@ -436,39 +436,90 @@ ENC_EXIT_FUNC:
   return func_ret;
 }
 
+// State variables for ABR
+static float smoothed_queue = 0.0f;
 static LHDCV5_QUALITY_T current_quality = LHDCV5_QUALITY_LOW;
+static int upgrade_cooldown_counter = 0;
 
+/**
+ * Helper: Map filtered queue value to recommended quality level
+ */
+static LHDCV5_QUALITY_T get_target_quality(float q_val) {
+    if (q_val <= 3.0f)  return LHDCV5_QUALITY_HIGH;  // 900kbps
+    if (q_val <= 5.0f)  return LHDCV5_QUALITY_MID;   // 520kbps
+    if (q_val <= 7.0f)  return LHDCV5_QUALITY_LOW;   // 390kbps
+    if (q_val <= 9.0f)  return LHDCV5_QUALITY_LOW4;  // 320kbps
+    if (q_val <= 11.0f) return LHDCV5_QUALITY_LOW3;  // 260kbps
+    if (q_val <= 14.0f) return LHDCV5_QUALITY_LOW2;  // 200kbps
+    if (q_val <= 17.0f) return LHDCV5_QUALITY_LOW1;  // 160kbps
+    return LHDCV5_QUALITY_LOW0;                      // 130kbps
+}
 
-int32_t lhdcv5BT_adjust_bitrate(HANDLE_LHDCV5_BT handle, uint32_t queueLen)
+int32_t lhdcv5BT_adjust_bitrate(HANDLE_LHDCV5_BT handle, uint32_t raw_queue_len)
 {
     int32_t func_ret = 0;
-    LHDCV5_QUALITY_T target_quality = current_quality;
     uint32_t result_inx = 0;
 
-    if (handle == NULL) return -1;
+    // 1. Apply EMA filtering (alpha=0.08 for high stability)
+    const float alpha = 0.08f;
+    smoothed_queue = (alpha * (float)raw_queue_len) + ((1.0f - alpha) * smoothed_queue);
 
-    if (queueLen > 15) {
-        target_quality = LHDCV5_QUALITY_LOW0;
-    } else if (queueLen > 10) {
-        target_quality = LHDCV5_QUALITY_LOW2;
-    } else if (queueLen > 6) {
-        target_quality = LHDCV5_QUALITY_LOW;
-    } else if (queueLen > 3) {
-        target_quality = LHDCV5_QUALITY_MID;
-    } else if (queueLen <= 2) {
-        target_quality = LHDCV5_QUALITY_HIGH;
+    // 2. Calculate baseline target based on smoothed queue
+    LHDCV5_QUALITY_T target_quality = get_target_quality(smoothed_queue);
+
+    // 3. Hysteresis: Apply penalty for conservative upgrade
+    if (target_quality > current_quality) {
+        // Test if the link can handle +3.0 more queue pressure
+        float penalized_queue = smoothed_queue + 3.0f;
+        LHDCV5_QUALITY_T conservative_target = get_target_quality(penalized_queue);
+
+        // Limit the upgrade to a more conservative level
+        if (conservative_target < target_quality) {
+            target_quality = conservative_target;
+        }
+
+        // Clamp to current to ensure we only move upward
+        if (target_quality < current_quality) {
+            target_quality = current_quality;
+        }
     }
 
-    if (target_quality != current_quality) {
-        func_ret = lhdcv5_util_set_target_bitrate_inx(handle, (uint32_t)target_quality, &result_inx);
+    // 4. Update cooldown timer
+    if (upgrade_cooldown_counter > 0) {
+        upgrade_cooldown_counter--;
+    }
 
-        if (func_ret >= 0) {
-            ALOGD("[Shim] Queue: %u, Switched: %d -> %d (Set: %d)",
-                  queueLen, current_quality, target_quality, result_inx);
-            current_quality = target_quality;
-        } else {
-            ALOGW("[Shim] Failed to set bitrate %d, error: %d", target_quality, func_ret);
+    // 5. Execute bitrate switching
+    if (target_quality != current_quality) {
+
+        // A. Downscale: Immediate execution, reset cooldown
+        if (target_quality < current_quality) {
+            func_ret = lhdcv5_util_set_target_bitrate_inx(handle, (uint32_t)target_quality, &result_inx);
+            if (func_ret >= 0) {
+                ALOGI("[Shim_Down] Q:%.2f, %d->%d. Reset Cool.", smoothed_queue, current_quality, target_quality);
+                current_quality = target_quality;
+                upgrade_cooldown_counter = 125; // 2.5s lock @ 50Hz
+            }
         }
+
+            // B. Upscale: Check if cooldown has expired
+        else if (target_quality > current_quality) {
+            if (upgrade_cooldown_counter == 0) {
+                func_ret = lhdcv5_util_set_target_bitrate_inx(handle, (uint32_t)target_quality, &result_inx);
+                if (func_ret >= 0) {
+                    ALOGI("[Shim_Up] Q:%.2f, %d->%d. Cool.", smoothed_queue, current_quality, target_quality);
+                    current_quality = target_quality;
+                    upgrade_cooldown_counter = 50; // 1s lock to prevent rapid jumps
+                }
+            }
+        }
+    }
+
+    // Heartbeat log: Every 2 seconds
+    static int log_counter = 0;
+    if (log_counter++ % 100 == 0) {
+        ALOGI("[Shim_Heartbeat] Raw:%u, Sm:%.2f, Cur:%d, Cool:%d",
+              raw_queue_len, smoothed_queue, current_quality, upgrade_cooldown_counter);
     }
 
     return func_ret;
