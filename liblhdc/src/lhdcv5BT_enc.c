@@ -15,6 +15,10 @@
 // lib debug logger:
 #define LHDCV5_LOG_LEVEL_CFG (LHDCV5_LOG_LEVEL_DEBUG)
 static char log_buff[256] = "";
+static float smoothed_queue = 0.0f;
+static LHDCV5_QUALITY_T current_quality = LHDCV5_QUALITY_HIGH1;
+static int upgrade_cooldown_counter = 0;
+static int is_abr_initialized = 0;
 static void print_log_cb(char *msg)
 {
   if (msg == NULL)
@@ -355,6 +359,8 @@ int32_t lhdcv5BT_set_bitrate
       rate_to_string(bitrate_inx), rate_to_string (bitrate_inx_set));
 
 ENC_EXIT_FUNC:
+  // reset abr init status
+  is_abr_initialized = 0;
   return func_ret;
 }
 
@@ -436,15 +442,11 @@ ENC_EXIT_FUNC:
   return func_ret;
 }
 
-// State variables for ABR
-static float smoothed_queue = 0.0f;
-static LHDCV5_QUALITY_T current_quality = LHDCV5_QUALITY_LOW;
-static int upgrade_cooldown_counter = 0;
-
 /**
  * Helper: Map filtered queue value to recommended quality level
  */
 static LHDCV5_QUALITY_T get_target_quality(float q_val) {
+    if (q_val <= 2.0f)  return LHDCV5_QUALITY_HIGH1; // 1000kbps
     if (q_val <= 3.0f)  return LHDCV5_QUALITY_HIGH;  // 900kbps
     if (q_val <= 5.0f)  return LHDCV5_QUALITY_MID;   // 520kbps
     if (q_val <= 7.0f)  return LHDCV5_QUALITY_LOW;   // 390kbps
@@ -458,7 +460,7 @@ static LHDCV5_QUALITY_T get_target_quality(float q_val) {
 int32_t lhdcv5BT_adjust_bitrate(HANDLE_LHDCV5_BT handle, uint32_t raw_queue_len)
 {
     int32_t func_ret = 0;
-    uint32_t result_inx = 0;
+    uint32_t result_inx = LHDCV5_QUALITY_HIGH1;
 
     // 1. Apply EMA filtering (alpha=0.08 for high stability)
     const float alpha = 0.08f;
@@ -467,10 +469,22 @@ int32_t lhdcv5BT_adjust_bitrate(HANDLE_LHDCV5_BT handle, uint32_t raw_queue_len)
     // 2. Calculate baseline target based on smoothed queue
     LHDCV5_QUALITY_T target_quality = get_target_quality(smoothed_queue);
 
+    // Force update quality in first run
+    if (!is_abr_initialized) {
+        func_ret = lhdcv5_util_set_target_bitrate_inx(handle, (uint32_t)target_quality, &result_inx);
+        is_abr_initialized = 1;
+        ALOGI("[Shim_ABR] Force update quality to %d", target_quality);
+    }
+
     // 3. Hysteresis: Apply penalty for conservative upgrade
     if (target_quality > current_quality) {
+        // Reduced penalty for High1 to allow aggressive 1Mbps probing
+        float penalty = 3.0f;
+        if (target_quality == LHDCV5_QUALITY_HIGH1) {
+            penalty = 1.0f;
+        }
         // Test if the link can handle +3.0 more queue pressure
-        float penalized_queue = smoothed_queue + 3.0f;
+        float penalized_queue = smoothed_queue + penalty;
         LHDCV5_QUALITY_T conservative_target = get_target_quality(penalized_queue);
 
         // Limit the upgrade to a more conservative level
@@ -518,7 +532,7 @@ int32_t lhdcv5BT_adjust_bitrate(HANDLE_LHDCV5_BT handle, uint32_t raw_queue_len)
     // Heartbeat log: Every 2 seconds
     static int log_counter = 0;
     if (log_counter++ % 100 == 0) {
-        ALOGI("[Shim_Heartbeat] Raw:%u, Sm:%.2f, Cur:%d, Cool:%d",
+        ALOGI("[Shim_ABR] Raw:%u, Sm:%.2f, Cur:%d, Cool:%d",
               raw_queue_len, smoothed_queue, current_quality, upgrade_cooldown_counter);
     }
 
@@ -530,8 +544,8 @@ int32_t lhdcv5BT_init_encoder
     HANDLE_LHDCV5_BT  handle,
     uint32_t      sampling_freq,
     uint32_t      bits_per_sample,
-    uint32_t      arg4,
-    uint32_t      arg5,
+    uint32_t      frame_duration,
+    uint32_t      bitrate_inx,
     uint32_t      mtu,
     uint32_t      interval,
     uint32_t      is_lossless_enable
@@ -539,33 +553,32 @@ int32_t lhdcv5BT_init_encoder
 {
   int32_t func_ret = LHDCV5_FRET_SUCCESS;
 
-  uint32_t final_bitrate_inx = LHDCV5_QUALITY_LOW3;
-  uint32_t final_frame_duration = 50; // 5ms
-
-  ALOGI("[Shim] BT_Stack sent: arg4=%u, arg5=%u", arg4, arg5);
-  ALOGI("[Shim] Correcting params for Blob -> BR_Idx=%u, Dur=%u",
-        final_bitrate_inx, final_frame_duration);
-
   if (handle == NULL) {
     return LHDCV5_FRET_INVALID_HANDLE_CB;
+  }
+
+  // Limit bitrate to valid range
+  if (bitrate_inx > LHDCV5_QUALITY_HIGH1){
+      bitrate_inx = LHDCV5_QUALITY_HIGH1;
   }
 
   func_ret = lhdcv5_util_init_encoder (
       handle,
       sampling_freq,
       bits_per_sample,
-      final_bitrate_inx,
-      final_frame_duration,
+      bitrate_inx,
+      frame_duration,
       mtu,
       interval,
       is_lossless_enable);
 
   if (func_ret < LHDCV5_FRET_SUCCESS) {
-    ALOGE("[Shim] lhdcv5_util_init_encoder failed: %d", func_ret);
-    return LHDCV5_FRET_ERROR;
+      ALOGE("[Shim] lhdcv5_util_init_encoder failed: %d", func_ret);
+      return LHDCV5_FRET_ERROR;
   }
 
   ALOGI("[Shim] Init success! LHDC should start playing now.");
+  ALOGI("[Shim] sample:%d, bits:%d, quality:%d, frameduration:%d", sampling_freq, bits_per_sample, bitrate_inx, frame_duration);
   return func_ret;
 }
 
@@ -723,7 +736,7 @@ int32_t lhdcv5_util_get_current_bitrate(HANDLE_LHDCV5_BT handle, uint32_t *bitra
     (void)handle;
     if (bitrate == NULL) return -1;
 
-    uint32_t kbps = 390;
+    uint32_t kbps = 1000;
 
     switch (current_quality) {
         case LHDCV5_QUALITY_LOW0: kbps = 130; break;
@@ -736,7 +749,7 @@ int32_t lhdcv5_util_get_current_bitrate(HANDLE_LHDCV5_BT handle, uint32_t *bitra
         case LHDCV5_QUALITY_HIGH: kbps = 900; break;
         case LHDCV5_QUALITY_HIGH1: kbps = 1000; break;
 
-        default: kbps = 390; break;
+        default: kbps = 1000; break;
     }
 
     *bitrate = kbps;
