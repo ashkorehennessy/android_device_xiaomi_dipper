@@ -19,3 +19,7 @@ ro.hardware.gps=brcm
 
 # USB
 vendor.usb.product_string=Xiaomi Mi 8
+
+# Disable hardware rotators to fix video playback lag
+vendor.display.disable_inline_rotator=1
+vendor.display.disable_offline_rotator=1
