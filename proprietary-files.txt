@@ -195,10 +195,6 @@ vendor/bin/glgps
 vendor/bin/gps.cer
 vendor/bin/ignss_2_0
 vendor/bin/lhd
-vendor/etc/SensorHub.patch
-vendor/etc/gps.conf
-vendor/etc/gpsconfig.xml
-vendor/etc/lhd.conf
 vendor/lib64/hw/flp.brcm.so;FIX_SONAME
 vendor/lib64/hw/gps.brcm.so;FIX_SONAME
 vendor/lib64/android.hardware.gnss@2.0-impl-xiaomi.so

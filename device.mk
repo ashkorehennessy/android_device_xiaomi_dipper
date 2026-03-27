@@ -69,7 +69,11 @@ PRODUCT_PACKAGES += \
 
 # GPS
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/gps/gps_debug.conf:$(TARGET_COPY_OUT_SYSTEM)/etc/gps_debug.conf
+    $(LOCAL_PATH)/gps/gps_debug.conf:$(TARGET_COPY_OUT_SYSTEM)/etc/gps_debug.conf \
+    $(LOCAL_PATH)/gps/gps.conf:$(TARGET_COPY_OUT_VENDOR)/etc/gps.conf \
+    $(LOCAL_PATH)/gps/gpsconfig.xml:$(TARGET_COPY_OUT_VENDOR)/etc/gpsconfig.xml \
+    $(LOCAL_PATH)/gps/lhd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/lhd.conf \
+    $(LOCAL_PATH)/gps/SensorHub.patch:$(TARGET_COPY_OUT_VENDOR)/etc/SensorHub.patch
 
 PRODUCT_PACKAGES += \
     gps.conf_symlink
